@@ -1,6 +1,5 @@
 import datetime
 import base64
-from django.core.files.base import ContentFile
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -84,9 +83,14 @@ def decode_base64_image(data_string, item_id):
 
     try:
         header, data = data_string.split(";base64,")
-        ext = header.split("/")[-1]
-        file_data = ContentFile(base64.b64decode(data), name=f"{item_id}.{ext}")
-        return file_data
+        mime_type = header.split(":", 1)[1]
+        ext = mime_type.split("/")[-1]
+        image_bytes = base64.b64decode(data)
+        return {
+            "bytes": image_bytes,
+            "mime_type": mime_type,
+            "filename": f"{item_id}.{ext}",
+        }
     except Exception:
         return None
 
@@ -262,6 +266,7 @@ def user_login(request):
     form = LoginForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
+        request.session["login_location_text"] = (request.POST.get("login_location_text") or "").strip()
         user = authenticate(
             request,
             username=form.cleaned_data["username"],
@@ -556,14 +561,16 @@ def checklist_form(request, ctype, site_id):
 
     if request.method == "POST":
         inspection_date = request.POST.get("inspection_date") or str(today)
+        submit_location_text = (request.POST.get("submit_location_text") or "").strip()
+        login_location_text = (request.session.get("login_location_text") or "").strip()
 
         submission = ChecklistSubmission.objects.create(
             user=request.user,
             site=site,
             checklist_type=ctype,
             inspection_date=inspection_date,
-            login_location_text="",
-            submit_location_text="",
+            login_location_text=login_location_text,
+            submit_location_text=submit_location_text,
         )
 
         has_error = False
@@ -604,7 +611,7 @@ def checklist_form(request, ctype, site_id):
             if image_file is None:
                 continue
 
-            response = ChecklistResponse(
+            response = ChecklistResponse.objects.create(
                 submission=submission,
                 item_id=iid,
                 control_item=item["control_item"],
@@ -613,8 +620,10 @@ def checklist_form(request, ctype, site_id):
                 manual_value=manual_val,
                 remarks=remarks,
                 escalation_level=escalation,
+                evidence_image_blob=image_file["bytes"],
+                evidence_image_mime_type=image_file["mime_type"],
+                evidence_image_filename=image_file["filename"],
             )
-            response.evidence_image.save(f"{iid}.jpg", image_file, save=True)
 
         return redirect("success_page", submission_id=submission.id)
 
@@ -677,7 +686,7 @@ def checklist_submission_report(request, submission_id):
     done_count = responses.filter(item_status="Done").count()
     issue_count = responses.filter(item_status="Issue").count()
     na_count = responses.filter(item_status="N/A").count()
-    photo_count = responses.exclude(evidence_image="").count()
+    photo_count = sum(1 for response in responses if response.has_evidence_image)
     logo_url = request.build_absolute_uri(static("inspections/img/dunhill_logo.png"))
 
     return render(request, "inspections/checklist_submission_report.html", {
@@ -708,7 +717,7 @@ def checklist_submission_report_pdf(request, submission_id):
     done_count = responses.filter(item_status="Done").count()
     issue_count = responses.filter(item_status="Issue").count()
     na_count = responses.filter(item_status="N/A").count()
-    photo_count = responses.exclude(evidence_image="").count()
+    photo_count = sum(1 for response in responses if response.has_evidence_image)
     logo_url = request.build_absolute_uri(static("inspections/img/dunhill_logo.png"))
 
     html_string = render_to_string(

@@ -6,11 +6,28 @@
 </div>
 
 <div class="card">
-    <form method="post">
+    <form method="post" id="login-form">
+    <input type="hidden" name="login_location_text" id="login_location_text">
         {% csrf_token %}
         <p>{{ form.username.label_tag }} {{ form.username }}</p>
         <p>{{ form.password.label_tag }} {{ form.password }}</p>
         <button class="btn btn-block" type="submit">Sign In</button>
     </form>
 </div>
+<script>
+(function() {
+    const hiddenInput = document.getElementById("login_location_text");
+    if (!hiddenInput || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            const { latitude, longitude, accuracy } = position.coords;
+            hiddenInput.value = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}, Accuracy: ${Math.round(accuracy)}m`;
+        },
+        function() {
+            hiddenInput.value = "Location permission denied or unavailable";
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+})();
+</script>
 {% endblock %}

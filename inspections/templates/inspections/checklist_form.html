@@ -504,6 +504,7 @@
 
     <form method="post" id="checklist-form">
         {% csrf_token %}
+        <input type="hidden" name="submit_location_text" id="submit_location_text">
 
         <div class="summary-grid">
             <div class="panel">
@@ -520,7 +521,9 @@
                     <li>Mark each item as Done, Issue, or N/A.</li>
                     <li>Add the required value where needed.</li>
                     <li>Open the camera and capture a live image for each item.</li>
+                    <li>Allow location access so the report can record where the checklist was submitted.</li>
                 </ul>
+                <div id="location_status" class="camera-status" style="margin-top:12px;">Requesting location…</div>
             </div>
         </div>
 
@@ -664,6 +667,41 @@
 
 <script>
     const cameraStreams = {};
+    let latestLocationText = "";
+
+    function setLocationStatus(message) {
+        const el = document.getElementById("location_status");
+        if (el) el.textContent = message;
+    }
+
+    function captureLocation() {
+        const hiddenInput = document.getElementById("submit_location_text");
+        if (!hiddenInput) return;
+
+        if (!navigator.geolocation) {
+            latestLocationText = "Geolocation not supported by this device/browser";
+            hiddenInput.value = latestLocationText;
+            setLocationStatus(latestLocationText);
+            return;
+        }
+
+        setLocationStatus("Capturing current location…");
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const { latitude, longitude, accuracy } = position.coords;
+                latestLocationText = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}, Accuracy: ${Math.round(accuracy)}m`;
+                hiddenInput.value = latestLocationText;
+                setLocationStatus(`Location captured: ${latestLocationText}`);
+            },
+            function(error) {
+                const message = error && error.message ? error.message : "Location unavailable";
+                latestLocationText = `Location unavailable: ${message}`;
+                hiddenInput.value = latestLocationText;
+                setLocationStatus(latestLocationText);
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+    }
 
     function setCameraStatus(itemId, message) {
         const status = document.getElementById(`status_${itemId}`);
@@ -765,6 +803,20 @@
             setCameraStatus(itemId, "Photo captured");
         }
     }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        captureLocation();
+
+        const form = document.getElementById("checklist-form");
+        if (form) {
+            form.addEventListener("submit", function() {
+                const hiddenInput = document.getElementById("submit_location_text");
+                if (hiddenInput && !hiddenInput.value && latestLocationText) {
+                    hiddenInput.value = latestLocationText;
+                }
+            });
+        }
+    });
 
     window.addEventListener("beforeunload", function() {
         Object.keys(cameraStreams).forEach(itemId => stopCamera(itemId));

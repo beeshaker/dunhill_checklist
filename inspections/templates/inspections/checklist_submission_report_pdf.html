@@ -328,6 +328,20 @@
                 <div class="meta-value">{{ submission.checklist_type|title }}</div>
             </td>
         </tr>
+        <tr>
+            <td class="meta-card">
+                <span class="meta-label">Login Location</span>
+                <div class="meta-value">{{ submission.login_location_text|default:"Not captured" }}</div>
+            </td>
+            <td class="meta-card">
+                <span class="meta-label">Submission Location</span>
+                <div class="meta-value">{{ submission.submit_location_text|default:"Not captured" }}</div>
+            </td>
+            <td class="meta-card">
+                <span class="meta-label">Generated At</span>
+                <div class="meta-value">{{ generated_at|date:"d M Y, H:i" }}</div>
+            </td>
+        </tr>
     </table>
 
     <table class="summary-table">
@@ -345,7 +359,7 @@
                 <div class="summary-text">Issues Raised</div>
             </td>
             <td class="summary-card">
-                <div class="summary-num">{% for r in responses %}{% if r.evidence_image %}1{% endif %}{% endfor %}</div>
+                <div class="summary-num">{{ photo_count }}</div>
                 <div class="summary-text">Photos Captured</div>
             </td>
         </tr>
@@ -388,10 +402,10 @@
 
             <div class="evidence-wrap">
                 <div class="evidence-title">Evidence Photo</div>
-                {% if response.evidence_image %}
+                {% if response.has_evidence_image %}
                     <img
                         class="evidence-img"
-                        src="{{ request.scheme }}://{{ request.get_host }}{{ response.evidence_image.url }}"
+                        src="{{ response.evidence_image_data_url }}"
                         alt="Evidence Image"
                     >
                 {% else %}

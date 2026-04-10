@@ -452,6 +452,14 @@
                     <span class="label">Portfolio</span>
                     <div class="value">{{ submission.site.portfolio_type }}</div>
                 </div>
+                <div class="info-card">
+                    <span class="label">Login Location</span>
+                    <div class="value">{{ submission.login_location_text|default:"Not captured" }}</div>
+                </div>
+                <div class="info-card">
+                    <span class="label">Submission Location</span>
+                    <div class="value">{{ submission.submit_location_text|default:"Not captured" }}</div>
+                </div>
             </div>
         </div>
 
@@ -518,8 +526,8 @@
 
             <div class="evidence-card">
                 <h4>Evidence Photo</h4>
-                {% if response.evidence_image %}
-                    <img src="{{ response.evidence_image.url }}" alt="Evidence Image">
+                {% if response.has_evidence_image %}
+                    <img src="{{ response.evidence_image_data_url }}" alt="Evidence Image">
                 {% else %}
                     <div class="no-image">No image was attached for this checklist item.</div>
                 {% endif %}

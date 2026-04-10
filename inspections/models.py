@@ -1,4 +1,5 @@
 from django.db import models
+import base64
 from django.contrib.auth.models import User
 from django.utils import timezone
 
@@ -75,11 +76,31 @@ class ChecklistResponse(models.Model):
     item_status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     manual_value = models.TextField(blank=True)
     remarks = models.TextField(blank=True)
-    evidence_image = models.ImageField(upload_to="checklist_evidence/")
+    evidence_image = models.ImageField(upload_to="checklist_evidence/", blank=True, null=True)
+    evidence_image_blob = models.BinaryField(blank=True, null=True)
+    evidence_image_mime_type = models.CharField(max_length=100, blank=True)
+    evidence_image_filename = models.CharField(max_length=255, blank=True)
     escalation_level = models.CharField(max_length=10, blank=True)
 
     def __str__(self):
         return f"{self.item_id} - {self.item_status}"
+
+    @property
+    def has_evidence_image(self):
+        return bool(self.evidence_image_blob or self.evidence_image)
+
+    @property
+    def evidence_image_data_url(self):
+        if self.evidence_image_blob:
+            mime_type = self.evidence_image_mime_type or "image/jpeg"
+            encoded = base64.b64encode(self.evidence_image_blob).decode("ascii")
+            return f"data:{mime_type};base64,{encoded}"
+        if self.evidence_image:
+            try:
+                return self.evidence_image.url
+            except Exception:
+                return ""
+        return ""
 
 
 class DailyQuestion(models.Model):
