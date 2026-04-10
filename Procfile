@@ -1,2 +1,2 @@
-web: gunicorn your_project_name.wsgi
+web: gunicorn checklist_site.wsgi
 release: python manage.py migrate
