@@ -1,0 +1,773 @@
+{% extends "inspections/base.html" %}
+{% block content %}
+<style>
+    :root {
+        --bg: #f4f7fb;
+        --surface: #ffffff;
+        --surface-2: #f8fafc;
+        --line: #dbe4f0;
+        --line-strong: #bfd0e4;
+        --text: #132238;
+        --muted: #64748b;
+        --primary: #1d4ed8;
+        --primary-dark: #1e3a8a;
+        --success: #15803d;
+        --warning: #b45309;
+        --danger: #b91c1c;
+        --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        --radius: 18px;
+    }
+
+    .checklist-shell {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 18px 14px 96px;
+    }
+
+    .hero-card {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 70%, #2563eb 100%);
+        color: #fff;
+        border-radius: 24px;
+        padding: 22px 20px;
+        box-shadow: var(--shadow);
+        margin-bottom: 18px;
+    }
+
+    .hero-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .hero-card h2 {
+        margin: 0;
+        font-size: clamp(1.4rem, 2.4vw, 2rem);
+        line-height: 1.15;
+    }
+
+    .hero-card p {
+        margin: 8px 0 0;
+        color: rgba(255,255,255,0.84);
+    }
+
+    .hero-badges {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+    }
+
+    .hero-badge {
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.16);
+        backdrop-filter: blur(4px);
+        font-size: 0.92rem;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        gap: 16px;
+        margin-bottom: 18px;
+    }
+
+    .panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        box-shadow: var(--shadow);
+        padding: 16px;
+    }
+
+    .panel-title {
+        margin: 0 0 12px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .help-list {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+    }
+
+    .date-field {
+        display: grid;
+        gap: 8px;
+    }
+
+    .input,
+    select,
+    textarea,
+    input[type="date"],
+    input[type="time"],
+    input[type="number"],
+    input[type="text"] {
+        width: 100%;
+        border: 1px solid var(--line-strong);
+        background: #fff;
+        color: var(--text);
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 0.98rem;
+        box-sizing: border-box;
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    textarea {
+        min-height: 104px;
+        resize: vertical;
+    }
+
+    .input:focus,
+    select:focus,
+    textarea:focus,
+    input:focus {
+        border-color: rgba(29, 78, 216, 0.6);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
+    }
+
+    .empty-state {
+        padding: 18px;
+        border-radius: 16px;
+        background: #fff7ed;
+        color: #9a3412;
+        border: 1px solid #fed7aa;
+    }
+
+    .module-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        box-shadow: var(--shadow);
+        margin-bottom: 16px;
+        overflow: hidden;
+    }
+
+    .module-card[open] {
+        border-color: #b7c8e6;
+    }
+
+    .module-summary {
+        list-style: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 18px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .module-summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .module-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .module-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: #dbeafe;
+        color: var(--primary-dark);
+        font-weight: 700;
+        flex: 0 0 auto;
+    }
+
+    .module-name {
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .module-sub {
+        font-size: 0.92rem;
+        color: var(--muted);
+        margin-top: 2px;
+    }
+
+    .module-chevron {
+        color: var(--muted);
+        font-size: 1.15rem;
+        transition: transform 0.2s ease;
+    }
+
+    details[open] .module-chevron {
+        transform: rotate(180deg);
+    }
+
+    .module-body {
+        padding: 0 14px 14px;
+        display: grid;
+        gap: 14px;
+    }
+
+    .item-card {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 16px;
+    }
+
+    .item-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    .item-title {
+        margin: 0;
+        font-size: 1.02rem;
+        color: var(--text);
+        line-height: 1.35;
+    }
+
+    .item-meta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        background: #e2e8f0;
+        color: #334155;
+    }
+
+    .pill-id {
+        background: #e0ecff;
+        color: #1d4ed8;
+    }
+
+    .pill-esc {
+        background: #fff7ed;
+        color: var(--warning);
+    }
+
+    .field-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        align-items: start;
+    }
+
+    .field {
+        display: grid;
+        gap: 8px;
+    }
+
+    .field.full {
+        grid-column: 1 / -1;
+    }
+
+    .field label,
+    .section-label {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .status-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .status-option {
+        position: relative;
+    }
+
+    .status-option input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .status-chip {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 48px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px solid var(--line-strong);
+        background: #fff;
+        font-weight: 700;
+        color: #334155;
+        transition: all 0.2s ease;
+        text-align: center;
+    }
+
+    .status-option input:checked + .status-chip {
+        border-color: rgba(29, 78, 216, 0.55);
+        background: #dbeafe;
+        color: var(--primary-dark);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .camera-wrap {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+    }
+
+    .camera-frame {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        background: #0f172a;
+        aspect-ratio: 16 / 10;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .camera-frame video,
+    .camera-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .camera-placeholder {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.95rem;
+        text-align: center;
+        padding: 18px;
+    }
+
+    .camera-status {
+        margin-top: 10px;
+        font-size: 0.88rem;
+        color: var(--muted);
+    }
+
+    .camera-actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.15s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .btn:active {
+        transform: translateY(0);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #fff;
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+    }
+
+    .btn-secondary {
+        background: #e0ecff;
+        color: #123f9c;
+    }
+
+    .btn-ghost {
+        background: #eef2f7;
+        color: #334155;
+    }
+
+    .sticky-submit {
+        position: sticky;
+        bottom: 12px;
+        z-index: 20;
+        margin-top: 18px;
+        background: rgba(244, 247, 251, 0.82);
+        backdrop-filter: blur(10px);
+        padding-top: 8px;
+    }
+
+    .submit-inner {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        box-shadow: var(--shadow);
+        padding: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .submit-note {
+        color: var(--muted);
+        font-size: 0.92rem;
+    }
+
+    .submit-btn {
+        min-width: 220px;
+    }
+
+    @media (max-width: 900px) {
+        .summary-grid,
+        .field-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 680px) {
+        .checklist-shell {
+            padding: 12px 12px 88px;
+        }
+
+        .hero-card,
+        .panel,
+        .module-summary,
+        .item-card {
+            border-radius: 18px;
+        }
+
+        .module-summary {
+            padding: 16px;
+        }
+
+        .status-grid,
+        .camera-actions {
+            grid-template-columns: 1fr;
+        }
+
+        .status-chip,
+        .btn,
+        .submit-btn {
+            min-height: 50px;
+        }
+
+        .submit-inner {
+            align-items: stretch;
+        }
+
+        .submit-btn {
+            width: 100%;
+            min-width: 0;
+        }
+    }
+</style>
+
+<div class="checklist-shell">
+    <div class="hero-card">
+        <div class="hero-top">
+            <div>
+                <h2>{{ ctype|title }} Checklist</h2>
+                <p>{{ site.name }} — {{ site.portfolio_type }}</p>
+            </div>
+       
+        </div>
+        <div class="hero-badges">
+            <div class="hero-badge">Capture live photos on site</div>
+            <div class="hero-badge">Fill item values quickly</div>
+            <div class="hero-badge">Submit once all checks are complete</div>
+        </div>
+    </div>
+
+    <form method="post" id="checklist-form">
+        {% csrf_token %}
+
+        <div class="summary-grid">
+            <div class="panel">
+                <h3 class="panel-title">Inspection Details</h3>
+                <div class="date-field">
+                    <label for="inspection_date">Inspection Date</label>
+                    <input id="inspection_date" type="date" name="inspection_date" value="{{ today|date:'Y-m-d' }}" required>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3 class="panel-title">Before You Submit</h3>
+                <ul class="help-list">
+                    <li>Mark each item as Done, Issue, or N/A.</li>
+                    <li>Add the required value where needed.</li>
+                    <li>Open the camera and capture a live image for each item.</li>
+                </ul>
+            </div>
+        </div>
+
+        {% if not grouped_items %}
+        <div class="empty-state">
+            No checklist items are configured for this portfolio and checklist type.
+        </div>
+        {% endif %}
+
+        {% for module, items in grouped_items.items %}
+            <details class="module-card" {% if forloop.first %}open{% endif %}>
+                <summary class="module-summary">
+                    <div class="module-left">
+                        <div class="module-icon">{{ forloop.counter }}</div>
+                        <div>
+                            <div class="module-name">{{ module }}</div>
+                            <div class="module-sub">{{ items|length }} item{{ items|length|pluralize }}</div>
+                        </div>
+                    </div>
+                    <div class="module-chevron">⌄</div>
+                </summary>
+
+                <div class="module-body">
+                    {% for item in items %}
+                        <div class="item-card">
+                            <div class="item-head">
+                                <div>
+                                    <h4 class="item-title">{{ item.control_item }}</h4>
+                                    <div class="item-meta">
+                                        <span class="pill pill-id">ID {{ item.id }}</span>
+                                        {% if item.escalation %}
+                                            <span class="pill pill-esc">Escalates to {{ item.escalation }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="field-grid">
+                                <div class="field full">
+                                    <div class="section-label">Status</div>
+                                    <div class="status-grid">
+                                        <label class="status-option">
+                                            <input type="radio" name="status_{{ item.id }}" value="Done" checked>
+                                            <span class="status-chip">Done</span>
+                                        </label>
+                                        <label class="status-option">
+                                            <input type="radio" name="status_{{ item.id }}" value="Issue">
+                                            <span class="status-chip">Issue</span>
+                                        </label>
+                                        <label class="status-option">
+                                            <input type="radio" name="status_{{ item.id }}" value="N/A">
+                                            <span class="status-chip">N/A</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="field">
+                                    <label>Value</label>
+
+                                    {% if item.input_type == "yes_no" %}
+                                        <select name="value_{{ item.id }}">
+                                            <option value="Yes">Yes</option>
+                                            <option value="No">No</option>
+                                        </select>
+                                    {% elif item.input_type == "decimal" %}
+                                        <input type="number" step="0.01" name="value_{{ item.id }}">
+                                    {% elif item.input_type == "integer" %}
+                                        <input type="number" step="1" name="value_{{ item.id }}">
+                                    {% elif item.input_type == "date" %}
+                                        <input type="date" name="value_{{ item.id }}">
+                                    {% elif item.input_type == "dropdown" %}
+                                        {% if item.dropdown_key == "borehole_status" %}
+                                            <select name="value_{{ item.id }}">
+                                                <option value="Operational">Operational</option>
+                                                <option value="Dry">Dry</option>
+                                                <option value="Under Maintenance">Under Maintenance</option>
+                                                <option value="N/A">N/A</option>
+                                            </select>
+                                        {% elif item.dropdown_key == "fire_alarm" %}
+                                            <select name="value_{{ item.id }}">
+                                                <option value="No Faults">No Faults</option>
+                                                <option value="Minor Fault">Minor Fault</option>
+                                                <option value="Active Alert">Active Alert</option>
+                                                <option value="N/A">N/A</option>
+                                            </select>
+                                        {% elif item.dropdown_key == "maintenance_status" %}
+                                            <select name="value_{{ item.id }}">
+                                                <option value="Open">Open</option>
+                                                <option value="In Progress">In Progress</option>
+                                                <option value="Completed">Completed</option>
+                                                <option value="On Hold">On Hold</option>
+                                            </select>
+                                        {% else %}
+                                            <input type="text" name="value_{{ item.id }}">
+                                        {% endif %}
+                                    {% elif item.input_type == "time" %}
+                                        <input type="time" name="value_{{ item.id }}">
+                                    {% else %}
+                                        <textarea name="value_{{ item.id }}" placeholder="Enter value..."></textarea>
+                                    {% endif %}
+                                </div>
+
+                                <div class="field">
+                                    <label>Remarks</label>
+                                    <textarea name="remarks_{{ item.id }}" placeholder="Add any remarks or issue notes..."></textarea>
+                                </div>
+
+                                <div class="field full">
+                                    <label>Live Camera Photo (required)</label>
+                                    <div class="camera-wrap">
+                                        <div class="camera-frame">
+                                            <video id="video_{{ item.id }}" autoplay playsinline></video>
+                                            <img id="preview_{{ item.id }}" alt="Captured preview" style="display:none;" />
+                                            <div id="placeholder_{{ item.id }}" class="camera-placeholder">Open the camera to capture a live inspection photo.</div>
+                                        </div>
+                                        <div id="status_{{ item.id }}" class="camera-status">Camera closed</div>
+                                        <div class="camera-actions">
+                                            <button type="button" class="btn btn-secondary" onclick="startCamera('{{ item.id }}')">Open Camera</button>
+                                            <button type="button" class="btn btn-primary" onclick="takePhoto('{{ item.id }}')">Take Photo</button>
+                                            <button type="button" class="btn btn-ghost" onclick="stopCamera('{{ item.id }}')">Close Camera</button>
+                                        </div>
+                                        <canvas id="canvas_{{ item.id }}" style="display:none;"></canvas>
+                                        <input type="hidden" name="photo_data_{{ item.id }}" id="photo_data_{{ item.id }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </details>
+        {% endfor %}
+
+        <div class="sticky-submit">
+            <div class="submit-inner">
+                <div class="submit-note">Review the checklist and submit once all required live photos have been captured.</div>
+                <button class="btn btn-primary submit-btn" type="submit">Submit Checklist</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    const cameraStreams = {};
+
+    function setCameraStatus(itemId, message) {
+        const status = document.getElementById(`status_${itemId}`);
+        if (status) status.textContent = message;
+    }
+
+    function togglePlaceholder(itemId, show) {
+        const placeholder = document.getElementById(`placeholder_${itemId}`);
+        if (placeholder) {
+            placeholder.style.display = show ? 'block' : 'none';
+        }
+    }
+
+    async function startCamera(itemId) {
+        try {
+            if (cameraStreams[itemId]) {
+                setCameraStatus(itemId, "Camera already open");
+                return;
+            }
+
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: { ideal: "environment" } },
+                audio: false
+            });
+
+            const video = document.getElementById(`video_${itemId}`);
+            const preview = document.getElementById(`preview_${itemId}`);
+
+            if (preview) preview.style.display = "none";
+            if (video) {
+                video.style.display = "block";
+                video.srcObject = stream;
+            }
+
+            togglePlaceholder(itemId, false);
+            cameraStreams[itemId] = stream;
+            setCameraStatus(itemId, "Camera ready");
+        } catch (err) {
+            alert("Unable to access camera. Please allow camera permission.");
+            setCameraStatus(itemId, "Camera permission denied or unavailable");
+            console.error(err);
+        }
+    }
+
+    function takePhoto(itemId) {
+        const video = document.getElementById(`video_${itemId}`);
+        const canvas = document.getElementById(`canvas_${itemId}`);
+        const preview = document.getElementById(`preview_${itemId}`);
+        const hiddenInput = document.getElementById(`photo_data_${itemId}`);
+
+        if (!video || !video.srcObject) {
+            alert("Please open the camera first.");
+            return;
+        }
+
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 960;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        hiddenInput.value = dataUrl;
+
+        if (preview) {
+            preview.src = dataUrl;
+            preview.style.display = "block";
+        }
+
+        video.style.display = "none";
+        togglePlaceholder(itemId, false);
+        setCameraStatus(itemId, "Photo captured");
+    }
+
+    function stopCamera(itemId) {
+        const stream = cameraStreams[itemId];
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            delete cameraStreams[itemId];
+        }
+
+        const video = document.getElementById(`video_${itemId}`);
+        if (video) {
+            video.srcObject = null;
+            video.style.display = "block";
+        }
+
+        const hiddenInput = document.getElementById(`photo_data_${itemId}`);
+        const preview = document.getElementById(`preview_${itemId}`);
+
+        if (preview && !hiddenInput?.value) {
+            preview.style.display = "none";
+            togglePlaceholder(itemId, true);
+        }
+
+        if (!hiddenInput?.value) {
+            setCameraStatus(itemId, "Camera closed");
+        } else {
+            setCameraStatus(itemId, "Photo captured");
+        }
+    }
+
+    window.addEventListener("beforeunload", function() {
+        Object.keys(cameraStreams).forEach(itemId => stopCamera(itemId));
+    });
+</script>
+{% endblock %}

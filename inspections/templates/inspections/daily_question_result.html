@@ -1,0 +1,49 @@
+{% extends "inspections/base.html" %}
+{% block content %}
+<style>
+    .result-wrap { max-width: 720px; margin: 0 auto; }
+    .result-card {
+        background: #fff; border-radius: 22px; padding: 26px; border: 1px solid #e5e7eb;
+        box-shadow: 0 10px 28px rgba(15,23,42,0.08);
+    }
+    .result-pill { display: inline-block; border-radius: 999px; padding: 10px 14px; font-weight: 800; margin-bottom: 16px; }
+    .result-pill.ok { background: #dcfce7; color: #166534; }
+    .result-pill.bad { background: #fee2e2; color: #b91c1c; }
+    .result-title { font-size: 28px; font-weight: 800; color: #0f172a; margin-bottom: 12px; }
+    .result-row { margin-bottom: 12px; color: #334155; line-height: 1.6; }
+    .answer-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px; margin-top: 14px; }
+</style>
+
+<div class="result-wrap">
+    <div class="result-card">
+        {% if timed_out %}
+            <div class="result-pill bad">Time expired</div>
+            <div class="result-title">You ran out of time</div>
+            <div class="result-row">This question has been recorded as not answered in time.</div>
+        {% elif assignment.is_correct %}
+            <div class="result-pill ok">Correct</div>
+            <div class="result-title">Well done</div>
+            <div class="result-row">Your answer has been recorded and scored correctly.</div>
+        {% else %}
+            <div class="result-pill bad">Incorrect</div>
+            <div class="result-title">Answer recorded</div>
+            <div class="result-row">Your response has been saved and scored as incorrect.</div>
+        {% endif %}
+
+        <div class="answer-box">
+            <div class="result-row"><strong>Question type:</strong> {% if session_type == 'override' %}Admin-assigned override{% else %}Daily question{% endif %}</div>
+            <div class="result-row"><strong>Question:</strong> {{ assignment.question.question_text }}</div>
+            <div class="result-row"><strong>Your answer:</strong> {{ assignment.selected_option|default:"No answer" }}{% if selected_option_text %} - {{ selected_option_text }}{% endif %}</div>
+            <div class="result-row"><strong>Correct answer:</strong> {{ assignment.question.correct_option }} - {{ correct_option_text }}</div>
+            {% if assignment.question.explanation %}
+                <div class="result-row"><strong>Explanation:</strong> {{ assignment.question.explanation }}</div>
+            {% endif %}
+            <div class="result-row"><strong>Score for this question:</strong> {{ assignment.score }}/1</div>
+        </div>
+
+        <div style="margin-top: 18px;">
+            <a class="btn" href="{% url 'dashboard' %}">Continue to Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

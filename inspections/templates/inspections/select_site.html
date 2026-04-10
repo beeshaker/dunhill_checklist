@@ -1,0 +1,18 @@
+{% extends "inspections/base.html" %}
+{% block content %}
+<div class="top">
+    <h2>Select Site</h2>
+    <p>{{ ctype|title }} checklist</p>
+</div>
+
+{% for site in sites %}
+    <div class="card">
+        <strong>{{ site.name }}</strong> — {{ site.portfolio_type }}
+        <div style="margin-top:10px;">
+            <a class="btn" href="{% url 'checklist_form' ctype site.id %}">Open</a>
+        </div>
+    </div>
+{% empty %}
+    <div class="card">No sites assigned.</div>
+{% endfor %}
+{% endblock %}

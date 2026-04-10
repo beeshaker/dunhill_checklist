@@ -1,0 +1,409 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Dunhill Checklist Report</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm 14mm 18mm 14mm;
+
+            @top-center {
+                content: "Dunhill Consulting Limited  |  Checklist Inspection Report";
+                font-size: 9px;
+                color: #4b5563;
+            }
+
+            @bottom-left {
+                content: "Professional • Cost Effective • Hassle Free";
+                font-size: 9px;
+                color: #6b7280;
+            }
+
+            @bottom-right {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 9px;
+                color: #6b7280;
+            }
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            color: #1f2937;
+        }
+
+        .header {
+            border: 1px solid #d9e2ef;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .header-top {
+            background: #2b2e73;
+            color: #fff;
+            padding: 18px 18px 14px;
+        }
+
+        .brand-row {
+            display: table;
+            width: 100%;
+        }
+
+        .brand-left,
+        .brand-right {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .brand-right {
+            text-align: right;
+            width: 230px;
+        }
+
+        .logo {
+            width: 145px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .title {
+            font-size: 23px;
+            font-weight: 700;
+            margin: 0 0 4px;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: rgba(255,255,255,0.86);
+            margin: 0;
+        }
+
+        .generated-box {
+            display: inline-block;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 12px;
+            padding: 10px 12px;
+            text-align: left;
+        }
+
+        .generated-box .small {
+            display: block;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: rgba(255,255,255,0.72);
+            margin-bottom: 4px;
+        }
+
+        .header-bottom {
+            background: #fff8ef;
+            border-top: 1px solid #f3d4a3;
+            color: #8a4b00;
+            padding: 10px 18px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .meta-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 10px;
+            margin: 0 0 14px;
+        }
+
+        .meta-card {
+            border: 1px solid #dbe4f0;
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: #f8fafc;
+        }
+
+        .meta-label {
+            display: block;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #64748b;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .meta-value {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 10px;
+            margin-bottom: 16px;
+        }
+
+        .summary-card {
+            width: 25%;
+            border: 1px solid #dbe4f0;
+            background: #fff;
+            border-radius: 12px;
+            text-align: center;
+            padding: 12px 8px;
+        }
+
+        .summary-num {
+            font-size: 20px;
+            font-weight: 800;
+            color: #2b2e73;
+            margin-bottom: 4px;
+        }
+
+        .summary-text {
+            font-size: 10px;
+            color: #64748b;
+            font-weight: 700;
+        }
+
+        .response-card {
+            border: 1px solid #dbe4f0;
+            border-radius: 14px;
+            margin-bottom: 14px;
+            overflow: hidden;
+            page-break-inside: avoid;
+        }
+
+        .response-head {
+            background: #f8fbff;
+            border-bottom: 1px solid #dbe4f0;
+            padding: 12px 14px;
+        }
+
+        .response-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0 0 8px;
+            line-height: 1.4;
+        }
+
+        .pill {
+            display: inline-block;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 9px;
+            font-weight: 800;
+            margin-right: 6px;
+        }
+
+        .pill-id { background: #e6efff; color: #1d4ed8; }
+        .pill-module { background: #eef6ff; color: #1e3a8a; }
+        .pill-done { background: #dcfce7; color: #166534; }
+        .pill-issue { background: #fee2e2; color: #b91c1c; }
+        .pill-na { background: #eef2f7; color: #475569; }
+
+        .response-body {
+            padding: 14px;
+        }
+
+        .detail-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 10px;
+            margin-bottom: 12px;
+        }
+
+        .detail-box {
+            border: 1px solid #dbe4f0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            background: #f8fafc;
+            vertical-align: top;
+        }
+
+        .detail-label {
+            display: block;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 11px;
+            color: #1f2937;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .evidence-wrap {
+            margin-top: 8px;
+        }
+
+        .evidence-title {
+            font-size: 10px;
+            font-weight: 800;
+            color: #2b2e73;
+            margin-bottom: 6px;
+        }
+
+        .evidence-img {
+            max-width: 100%;
+            max-height: 240px;
+            border: 1px solid #dbe4f0;
+            border-radius: 12px;
+            display: block;
+        }
+
+        .no-image {
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 14px;
+            color: #64748b;
+            background: #f8fafc;
+            text-align: center;
+        }
+
+        .footer-note {
+            margin-top: 10px;
+            font-size: 10px;
+            color: #64748b;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-top">
+            <div class="brand-row">
+                <div class="brand-left">
+                    <img class="logo" src="{{ logo_url }}" alt="Dunhill Logo">
+                    <div class="title">Checklist Inspection Report</div>
+                    <p class="subtitle">Dunhill Consulting Limited</p>
+                </div>
+                <div class="brand-right">
+                    <div class="generated-box">
+                        <span class="small">Generated</span>
+                        {{ generated_at|date:"d M Y, H:i" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="header-bottom">
+            {{ submission.checklist_type|title }} Checklist • {{ submission.site.name }} • Submission #{{ submission.id }}
+        </div>
+    </div>
+
+    <table class="meta-table">
+        <tr>
+            <td class="meta-card">
+                <span class="meta-label">Prepared By</span>
+                <div class="meta-value">{{ submission.user.get_full_name|default:submission.user.username }}</div>
+            </td>
+            <td class="meta-card">
+                <span class="meta-label">Site</span>
+                <div class="meta-value">{{ submission.site.name }}</div>
+            </td>
+            <td class="meta-card">
+                <span class="meta-label">Portfolio</span>
+                <div class="meta-value">{{ submission.site.portfolio_type }}</div>
+            </td>
+        </tr>
+        <tr>
+            <td class="meta-card">
+                <span class="meta-label">Inspection Date</span>
+                <div class="meta-value">{{ submission.inspection_date|date:"d M Y" }}</div>
+            </td>
+            <td class="meta-card">
+                <span class="meta-label">Submitted At</span>
+                <div class="meta-value">{{ submission.submitted_at|date:"d M Y, H:i" }}</div>
+            </td>
+            <td class="meta-card">
+                <span class="meta-label">Checklist Type</span>
+                <div class="meta-value">{{ submission.checklist_type|title }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <table class="summary-table">
+        <tr>
+            <td class="summary-card">
+                <div class="summary-num">{{ responses|length }}</div>
+                <div class="summary-text">Total Items</div>
+            </td>
+            <td class="summary-card">
+                <div class="summary-num">{% for r in responses %}{% if r.item_status == "Done" %}1{% endif %}{% endfor %}</div>
+                <div class="summary-text">Done Logged</div>
+            </td>
+            <td class="summary-card">
+                <div class="summary-num">{% for r in responses %}{% if r.item_status == "Issue" %}1{% endif %}{% endfor %}</div>
+                <div class="summary-text">Issues Raised</div>
+            </td>
+            <td class="summary-card">
+                <div class="summary-num">{% for r in responses %}{% if r.evidence_image %}1{% endif %}{% endfor %}</div>
+                <div class="summary-text">Photos Captured</div>
+            </td>
+        </tr>
+    </table>
+
+    {% for response in responses %}
+    <div class="response-card">
+        <div class="response-head">
+            <div class="response-title">{{ response.control_item }}</div>
+            <span class="pill pill-id">ID {{ response.item_id }}</span>
+            <span class="pill pill-module">{{ response.module }}</span>
+            {% if response.item_status == "Done" %}
+                <span class="pill pill-done">Done</span>
+            {% elif response.item_status == "Issue" %}
+                <span class="pill pill-issue">Issue</span>
+            {% else %}
+                <span class="pill pill-na">N/A</span>
+            {% endif %}
+        </div>
+
+        <div class="response-body">
+            <table class="detail-table">
+                <tr>
+                    <td class="detail-box" style="width:50%;">
+                        <span class="detail-label">Manual Value</span>
+                        <div class="detail-value">{{ response.manual_value|default:"-" }}</div>
+                    </td>
+                    <td class="detail-box" style="width:50%;">
+                        <span class="detail-label">Escalation Level</span>
+                        <div class="detail-value">{{ response.escalation_level|default:"-" }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="detail-box" colspan="2">
+                        <span class="detail-label">Remarks</span>
+                        <div class="detail-value">{{ response.remarks|default:"No remarks provided." }}</div>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="evidence-wrap">
+                <div class="evidence-title">Evidence Photo</div>
+                {% if response.evidence_image %}
+                    <img
+                        class="evidence-img"
+                        src="{{ request.scheme }}://{{ request.get_host }}{{ response.evidence_image.url }}"
+                        alt="Evidence Image"
+                    >
+                {% else %}
+                    <div class="no-image">No image was attached for this checklist item.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="footer-note">
+        Dunhill Consulting Limited — Professional • Cost Effective • Hassle Free
+    </div>
+</body>
+</html>

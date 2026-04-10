@@ -1,0 +1,23 @@
+{% extends "inspections/base.html" %}
+{% block content %}
+<div class="top">
+    <h2>Create Site</h2>
+</div>
+
+<div class="card">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="btn btn-block" type="submit">Create Site</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Existing Sites</h3>
+    {% for site in sites %}
+        <div>{{ site.name }} — {{ site.portfolio_type }}{% if site.address %} — {{ site.address }}{% endif %}</div>
+    {% empty %}
+        <div>No sites yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}

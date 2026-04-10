@@ -1,0 +1,14 @@
+{% extends "inspections/base.html" %}
+{% block content %}
+<div class="top">
+    <h2>Checklist Submitted</h2>
+</div>
+
+<div class="card">
+    <p>Submission ID: {{ submission.id }}</p>
+    <p>Checklist: {{ submission.checklist_type }}</p>
+    <p>Site: {{ submission.site.name }}</p>
+    <p>Escalations: {{ esc_count }}</p>
+    <a class="btn" href="{% url 'dashboard' %}">Back to Dashboard</a>
+</div>
+{% endblock %}

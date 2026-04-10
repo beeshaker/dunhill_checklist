@@ -1,0 +1,16 @@
+{% extends "inspections/base.html" %}
+{% block content %}
+<div class="top">
+    <h2>Dunhill Consulting Limited</h2>
+    <p>Site Inspection Checklist System</p>
+</div>
+
+<div class="card">
+    <form method="post">
+        {% csrf_token %}
+        <p>{{ form.username.label_tag }} {{ form.username }}</p>
+        <p>{{ form.password.label_tag }} {{ form.password }}</p>
+        <button class="btn btn-block" type="submit">Sign In</button>
+    </form>
+</div>
+{% endblock %}

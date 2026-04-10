@@ -1,0 +1,655 @@
+{% extends "inspections/base.html" %}
+{% block content %}
+
+<style>
+    .dashboard-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .hero-card {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #334155 100%);
+        color: #fff;
+        border-radius: 24px;
+        padding: 28px;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    .hero-title {
+        margin: 0;
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+
+    .hero-subtitle {
+        margin: 8px 0 0 0;
+        color: rgba(255,255,255,0.82);
+        font-size: 15px;
+    }
+
+    .hero-badges {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .hero-badge {
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.14);
+        padding: 10px 14px;
+        border-radius: 14px;
+        font-size: 13px;
+        color: #fff;
+        backdrop-filter: blur(6px);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .metric-card {
+        background: #ffffff;
+        border-radius: 22px;
+        padding: 20px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+        border: 1px solid #e5e7eb;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: linear-gradient(90deg, #2563eb, #06b6d4);
+    }
+
+    .metric-label {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .metric-num {
+        font-size: 34px;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1;
+    }
+
+    .metric-foot {
+        margin-top: 10px;
+        font-size: 13px;
+        color: #94a3b8;
+    }
+
+    .quick-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .action-card {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 20px;
+        text-decoration: none;
+        color: inherit;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        display: block;
+    }
+
+    .action-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.1);
+        border-color: #cbd5e1;
+    }
+
+    .action-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
+        font-size: 20px;
+        background: linear-gradient(135deg, #dbeafe, #e0f2fe);
+    }
+
+    .action-title {
+        font-size: 17px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 6px;
+    }
+
+    .action-sub {
+        font-size: 14px;
+        color: #64748b;
+        line-height: 1.5;
+    }
+
+    .chart-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 16px;
+    }
+
+    .bottom-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .card {
+        background: #ffffff;
+        border-radius: 22px;
+        padding: 22px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+    }
+
+    .card h3 {
+        margin: 0 0 16px 0;
+        font-size: 18px;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .summary-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 14px 16px;
+        font-size: 14px;
+    }
+
+    .summary-row span {
+        color: #475569;
+        font-weight: 600;
+    }
+
+    .summary-row strong {
+        color: #0f172a;
+        font-size: 18px;
+    }
+
+    .site-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .site-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+
+    .site-row strong {
+        color: #0f172a;
+        font-size: 14px;
+    }
+
+    .site-pill {
+        background: #e0f2fe;
+        color: #075985;
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .recent-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .recent-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+
+    .recent-row strong {
+        color: #0f172a;
+        font-size: 15px;
+    }
+
+    .recent-sub {
+        font-size: 13px;
+        color: #64748b;
+        margin-top: 5px;
+    }
+
+    .recent-time {
+        font-size: 13px;
+        color: #475569;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .empty-state {
+        padding: 22px;
+        border-radius: 16px;
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        color: #64748b;
+        text-align: center;
+        font-size: 14px;
+    }
+
+    .canvas-wrap {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        border-radius: 18px;
+        padding: 12px;
+        border: 1px solid #edf2f7;
+    }
+
+    .compliance-summary {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .compliance-alert {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 14px;
+        padding: 14px 16px;
+        font-size: 14px;
+        border: 1px solid;
+    }
+
+    .compliance-alert span {
+        font-weight: 700;
+    }
+
+    .compliance-alert strong {
+        font-size: 18px;
+    }
+
+    .compliance-alert.daily {
+        background: #fff7ed;
+        border-color: #fed7aa;
+        color: #c2410c;
+    }
+
+    .compliance-alert.weekly {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #b91c1c;
+    }
+
+    .compliance-section details {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+    }
+
+    .compliance-section summary {
+        cursor: pointer;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    @media (max-width: 1100px) {
+        .stats-grid,
+        .quick-grid,
+        .chart-grid,
+        .bottom-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 720px) {
+        .stats-grid,
+        .quick-grid,
+        .chart-grid,
+        .bottom-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .hero-card {
+            padding: 22px;
+        }
+
+        .hero-title {
+            font-size: 24px;
+        }
+
+        .recent-row,
+        .site-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .recent-time {
+            white-space: normal;
+        }
+    }
+</style>
+
+<div class="dashboard-wrap">
+
+    <div class="hero-card">
+        <div>
+            <h2 class="hero-title">Dashboard</h2>
+            <p class="hero-subtitle">
+                Welcome {{ request.user.get_full_name|default:request.user.username }} —
+                {{ now|date:"l, d F Y H:i" }}
+            </p>
+        </div>
+        <div class="hero-badges">
+            <div class="hero-badge">Daily: {{ daily_count }}</div>
+            <div class="hero-badge">Weekly: {{ weekly_count }}</div>
+            <div class="hero-badge">Monthly: {{ monthly_count }}</div>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="metric-card">
+            <div class="metric-label">Total Submissions</div>
+            <div class="metric-num">{{ total_submissions }}</div>
+            <div class="metric-foot">All recorded inspections</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-label">Sites Available</div>
+            <div class="metric-num">{{ sites|length }}</div>
+            <div class="metric-foot">Assigned properties</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-label">Question Accuracy</div>
+            <div class="metric-num">{{ question_accuracy_pct }}%</div>
+            <div class="metric-foot">Daily knowledge score</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-label">Question Due Today</div>
+            <div class="metric-num">{% if question_due_today %}Yes{% else %}No{% endif %}</div>
+            <div class="metric-foot">One MCQ required per day</div>
+        </div>
+    </div>
+
+    <div class="quick-grid">
+        <a class="action-card" href="{% url 'daily_question' %}">
+            <div class="action-icon">❓</div>
+            <div class="action-title">Daily Question</div>
+            <div class="action-sub">Answer your once-per-day timed MCQ.</div>
+        </a>
+
+        <a class="action-card" href="{% url 'select_checklist' %}">
+            <div class="action-icon">📝</div>
+            <div class="action-title">New Checklist</div>
+            <div class="action-sub">Start a daily, weekly, or monthly inspection.</div>
+        </a>
+
+        {% if is_admin_user %}
+        <a class="action-card" href="{% url 'admin_panel' %}">
+            <div class="action-icon">⚙️</div>
+            <div class="action-title">Admin Panel</div>
+            <div class="action-sub">Manage users, sites, and assignments.</div>
+        </a>
+        {% endif %}
+
+        <a class="action-card" href="{% url 'logout' %}">
+            <div class="action-icon">↩️</div>
+            <div class="action-title">Logout</div>
+            <div class="action-sub">Sign out of the inspection system.</div>
+        </a>
+    </div>
+
+    <div class="chart-grid">
+        <div class="card">
+            <h3>Submission Trend</h3>
+            <div class="canvas-wrap">
+                <canvas id="trendChart" height="110"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Checklist Compliance</h3>
+
+            <div class="compliance-summary">
+                <div class="compliance-alert daily">
+                    <span>Sites Missing Daily Checklists</span>
+                    <strong>{{ missed_daily_site_count }}</strong>
+                </div>
+
+                <div class="compliance-alert weekly">
+                    <span>Sites Missing Weekly Checklists</span>
+                    <strong>{{ missed_weekly_site_count }}</strong>
+                </div>
+            </div>
+
+            <div class="compliance-section">
+                <details style="margin-bottom: 12px;">
+                    <summary>Missed Daily Sites</summary>
+
+                    {% if missed_daily_sites %}
+                        <div class="recent-list" style="margin-top: 12px;">
+                            {% for site in missed_daily_sites %}
+                                <details>
+                                    <summary>{{ site.site_name }} ({{ site.missed_count }} missed)</summary>
+                                    <div style="margin-top: 10px;">
+                                        <div class="recent-sub" style="margin-bottom: 8px;">
+                                            {{ site.portfolio_type }}
+                                        </div>
+
+                                        {% for missed_date in site.missed_dates %}
+                                            <div class="recent-row" style="margin-bottom: 8px;">
+                                                <div>
+                                                    <strong>{{ site.site_name }}</strong>
+                                                    <div class="recent-sub">
+                                                        Daily checklist missing for {{ missed_date|date:"D, d M Y" }}
+                                                    </div>
+                                                </div>
+                                                <div class="recent-time">Missed</div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </details>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state" style="margin-top: 12px;">No sites have missed daily checklists.</div>
+                    {% endif %}
+                </details>
+
+                <details>
+                    <summary>Missed Weekly Sites</summary>
+
+                    {% if missed_weekly_sites %}
+                        <div class="recent-list" style="margin-top: 12px;">
+                            {% for site in missed_weekly_sites %}
+                                <details>
+                                    <summary>{{ site.site_name }} ({{ site.missed_count }} missed)</summary>
+                                    <div style="margin-top: 10px;">
+                                        <div class="recent-sub" style="margin-bottom: 8px;">
+                                            {{ site.portfolio_type }}
+                                        </div>
+
+                                        {% for missed_week in site.missed_weeks %}
+                                            <div class="recent-row" style="margin-bottom: 8px;">
+                                                <div>
+                                                    <strong>{{ site.site_name }}</strong>
+                                                    <div class="recent-sub">
+                                                        Weekly checklist missing for
+                                                        {{ missed_week.week_start|date:"d M Y" }} - {{ missed_week.week_end|date:"d M Y" }}
+                                                    </div>
+                                                </div>
+                                                <div class="recent-time">Missed</div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </details>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state" style="margin-top: 12px;">No sites have missed weekly checklists.</div>
+                    {% endif %}
+                </details>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-grid">
+        <div class="card">
+            <h3>Question Summary</h3>
+            <div class="summary-list">
+                <div class="summary-row">
+                    <span>Answered</span>
+                    <strong>{{ total_questions_answered }}</strong>
+                </div>
+                <div class="summary-row">
+                    <span>Correct</span>
+                    <strong>{{ correct_answers }}</strong>
+                </div>
+                <div class="summary-row">
+                    <span>Wrong / Timed Out</span>
+                    <strong>{{ wrong_answers }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>My Sites</h3>
+            <div class="site-list">
+                {% for site in sites %}
+                    <div class="site-row">
+                        <strong>{{ site.name }}</strong>
+                        <span class="site-pill">{{ site.portfolio_type }}</span>
+                    </div>
+                {% empty %}
+                    <div class="empty-state">No sites available.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Recent Submissions</h3>
+        <div class="recent-list">
+            {% for r in recent %}
+                <div class="recent-row">
+                    <div>
+                        <strong>{{ r.site.name }}</strong>
+                        <div class="recent-sub">
+                            {{ r.checklist_type|title }} checklist • {{ r.inspection_date }}
+                        </div>
+                    </div>
+                    <div class="recent-time">
+                        {{ r.submitted_at|date:"d M Y H:i" }}
+                    </div>
+                </div>
+            {% empty %}
+                <div class="empty-state">No submissions yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+{{ chart_labels|json_script:"chart-labels" }}
+{{ chart_values|json_script:"chart-values" }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const trendCtx = document.getElementById("trendChart");
+    const chartLabels = JSON.parse(document.getElementById("chart-labels").textContent);
+    const chartValues = JSON.parse(document.getElementById("chart-values").textContent);
+
+    new Chart(trendCtx, {
+        type: "line",
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: "Submissions",
+                data: chartValues,
+                borderColor: "#2563eb",
+                backgroundColor: "rgba(37, 99, 235, 0.10)",
+                borderWidth: 3,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                tension: 0.35,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: "#64748b"
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: "#64748b",
+                        precision: 0
+                    },
+                    grid: {
+                        color: "rgba(148, 163, 184, 0.18)"
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+{% endblock %}

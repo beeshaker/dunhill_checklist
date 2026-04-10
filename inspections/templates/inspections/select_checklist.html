@@ -1,0 +1,12 @@
+{% extends "inspections/base.html" %}
+{% block content %}
+<div class="top">
+    <h2>Select Checklist Type</h2>
+</div>
+
+<div class="grid grid-3">
+    <a class="card" href="{% url 'select_site' 'daily' %}">Daily Checklist</a>
+    <a class="card" href="{% url 'select_site' 'weekly' %}">Weekly Checklist</a>
+    <a class="card" href="{% url 'select_site' 'monthly' %}">Monthly Checklist</a>
+</div>
+{% endblock %}

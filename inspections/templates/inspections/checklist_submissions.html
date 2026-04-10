@@ -1,0 +1,43 @@
+{% extends "inspections/base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>Checklist Submissions</h2>
+
+    <div class="table-wrap">
+        <table class="table-clean">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Submitted</th>
+                    <th>User</th>
+                    <th>Site</th>
+                    <th>Type</th>
+                    <th>Inspection Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for submission in submissions %}
+                <tr>
+                    <td>{{ submission.id }}</td>
+                    <td>{{ submission.submitted_at }}</td>
+                    <td>{{ submission.user.username }}</td>
+                    <td>{{ submission.site.name }}</td>
+                    <td>{{ submission.checklist_type|title }}</td>
+                    <td>{{ submission.inspection_date }}</td>
+                    <td>
+                        <a class="btn" href="{% url 'checklist_submission_report' submission.id %}" target="_blank">View Report</a>
+                        <a class="btn" href="{% url 'checklist_submission_report_pdf' submission.id %}">Download PDF</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">No submissions found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

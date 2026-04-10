@@ -1,0 +1,27 @@
+{% extends "inspections/base.html" %}
+{% block content %}
+<div class="top">
+    <h2>Create User</h2>
+</div>
+
+<div class="card">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="btn btn-block" type="submit">Create User</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Existing Users</h3>
+    {% for user in users %}
+        <div>
+            {{ user.username }}
+            {% if user.userprofile %} — {{ user.userprofile.role }}{% endif %}
+            {% if user.get_full_name %} — {{ user.get_full_name }}{% endif %}
+        </div>
+    {% empty %}
+        <div>No users yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}
