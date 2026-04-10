@@ -5,3 +5,4 @@ Pillow==11.1.0
 python-decouple==3.8
 PyMySQL==1.1.1
 weasyprint
+dj-database-url
