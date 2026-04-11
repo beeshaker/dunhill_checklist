@@ -8,6 +8,7 @@ from .models import (
     UserSite,
     ChecklistSubmission,
     ChecklistResponse,
+    ChecklistItem,
     DailyQuestion,
     DailyQuestionAssignment,
     QuestionOverride,
@@ -59,6 +60,30 @@ class ChecklistResponseAdmin(admin.ModelAdmin):
     list_display = ("submission", "item_id", "item_status", "escalation_level")
     list_filter = ("item_status", "escalation_level")
     search_fields = ("item_id", "control_item", "module")
+
+
+@admin.register(ChecklistItem)
+class ChecklistItemAdmin(admin.ModelAdmin):
+    list_display = (
+        "item_id",
+        "checklist_type",
+        "module",
+        "applies_to",
+        "site_category",
+        "site",
+        "display_order",
+        "requires_photo",
+        "is_active",
+    )
+    list_filter = (
+        "checklist_type",
+        "applies_to",
+        "site_category",
+        "requires_photo",
+        "is_active",
+    )
+    search_fields = ("item_id", "module", "control_item")
+    ordering = ("checklist_type", "module", "display_order", "item_id")
 
 
 @admin.register(DailyQuestion)

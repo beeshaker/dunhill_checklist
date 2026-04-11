@@ -68,6 +68,90 @@
         font-size: 0.92rem;
     }
 
+    .search-panel {
+        position: sticky;
+        top: 10px;
+        z-index: 25;
+        margin-bottom: 18px;
+    }
+
+    .search-shell {
+        position: relative;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        box-shadow: var(--shadow);
+        padding: 14px;
+    }
+
+    .search-label {
+        display: block;
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 8px;
+    }
+
+    .search-input {
+        width: 100%;
+        border: 1px solid var(--line-strong);
+        background: #fff;
+        color: var(--text);
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 0.98rem;
+        box-sizing: border-box;
+        outline: none;
+    }
+
+    .search-results {
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        top: calc(100% - 8px);
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+        max-height: 280px;
+        overflow-y: auto;
+        display: none;
+        z-index: 40;
+    }
+
+    .search-result-item {
+        padding: 12px 14px;
+        border-bottom: 1px solid #eef2f7;
+        cursor: pointer;
+    }
+
+    .search-result-item:last-child {
+        border-bottom: none;
+    }
+
+    .search-result-item:hover,
+    .search-result-item.active {
+        background: #eff6ff;
+    }
+
+    .search-result-title {
+        font-weight: 700;
+        color: var(--text);
+        font-size: 0.94rem;
+    }
+
+    .search-result-meta {
+        margin-top: 4px;
+        font-size: 0.84rem;
+        color: var(--muted);
+    }
+
+    .search-empty {
+        padding: 12px 14px;
+        color: var(--muted);
+        font-size: 0.9rem;
+    }
+
     .summary-grid {
         display: grid;
         grid-template-columns: 1.1fr 1fr;
@@ -99,6 +183,20 @@
     .date-field {
         display: grid;
         gap: 8px;
+    }
+
+    .draft-tools {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+    }
+
+    .draft-status {
+        margin-top: 12px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--success);
     }
 
     .input,
@@ -152,6 +250,10 @@
 
     .module-card[open] {
         border-color: #b7c8e6;
+    }
+
+    .module-card.search-hidden {
+        display: none;
     }
 
     .module-summary {
@@ -220,6 +322,15 @@
         border: 1px solid var(--line);
         border-radius: 18px;
         padding: 16px;
+    }
+
+    .item-card.search-hidden {
+        display: none;
+    }
+
+    .search-highlight {
+        outline: 3px solid rgba(37, 99, 235, 0.18);
+        border-radius: 18px;
     }
 
     .item-head {
@@ -409,6 +520,11 @@
         color: #334155;
     }
 
+    .btn-danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
     .sticky-submit {
         position: sticky;
         bottom: 12px;
@@ -439,6 +555,27 @@
 
     .submit-btn {
         min-width: 220px;
+    }
+
+    .ccp-card {
+        border-color: #fecaca;
+        background: #fff7f7;
+    }
+
+    .ccp-icon {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .ccp-banner {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+        font-size: 0.9rem;
+        font-weight: 600;
     }
 
     @media (max-width: 900px) {
@@ -493,12 +630,25 @@
                 <h2>{{ ctype|title }} Checklist</h2>
                 <p>{{ site.name }} — {{ site.portfolio_type }}</p>
             </div>
-       
         </div>
         <div class="hero-badges">
             <div class="hero-badge">Capture live photos on site</div>
             <div class="hero-badge">Fill item values quickly</div>
-            <div class="hero-badge">Submit once all checks are complete</div>
+            <div class="hero-badge">Save progress locally if network cuts out</div>
+        </div>
+    </div>
+
+    <div class="search-panel">
+        <div class="search-shell">
+            <label for="item-search" class="search-label">Search checklist items</label>
+            <input
+                id="item-search"
+                type="text"
+                class="search-input"
+                placeholder="Search by item ID, module, or checklist text..."
+                autocomplete="off"
+            >
+            <div id="search-results" class="search-results"></div>
         </div>
     </div>
 
@@ -513,6 +663,13 @@
                     <label for="inspection_date">Inspection Date</label>
                     <input id="inspection_date" type="date" name="inspection_date" value="{{ today|date:'Y-m-d' }}" required>
                 </div>
+
+                <div class="draft-tools">
+                    <button type="button" class="btn btn-secondary" onclick="saveDraftNow()">Save Draft</button>
+                    <button type="button" class="btn btn-ghost" onclick="restoreDraft()">Restore Draft</button>
+                    <button type="button" class="btn btn-danger" onclick="clearDraft()">Clear Draft</button>
+                </div>
+                <div id="draft_status" class="draft-status">Draft system ready</div>
             </div>
 
             <div class="panel">
@@ -534,10 +691,12 @@
         {% endif %}
 
         {% for module, items in grouped_items.items %}
-            <details class="module-card" {% if forloop.first %}open{% endif %}>
+            <details class="module-card {% if module == 'Critical Control Points (CCPs)' %}ccp-card{% endif %}"
+                     data-module-name="{{ module|lower }}"
+                     {% if forloop.first %}open{% endif %}>
                 <summary class="module-summary">
                     <div class="module-left">
-                        <div class="module-icon">{{ forloop.counter }}</div>
+                        <div class="module-icon {% if module == 'Critical Control Points (CCPs)' %}ccp-icon{% endif %}">{{ forloop.counter }}</div>
                         <div>
                             <div class="module-name">{{ module }}</div>
                             <div class="module-sub">{{ items|length }} item{{ items|length|pluralize }}</div>
@@ -547,8 +706,18 @@
                 </summary>
 
                 <div class="module-body">
+                    {% if module == "Critical Control Points (CCPs)" %}
+                        <div class="ccp-banner">
+                            Critical Control Points must be escalated immediately if failed.
+                        </div>
+                    {% endif %}
+
                     {% for item in items %}
-                        <div class="item-card">
+                        <div class="item-card"
+                             id="item_card_{{ item.id }}"
+                             data-item-id="{{ item.id }}"
+                             data-module="{{ module|lower }}"
+                             data-search-text="{{ item.id|lower }} {{ module|lower }} {{ item.control_item|lower }}">
                             <div class="item-head">
                                 <div>
                                     <h4 class="item-title">{{ item.control_item }}</h4>
@@ -561,7 +730,7 @@
                                 </div>
                             </div>
 
-                            <div class="field-grid">
+                            <div class="field-grid checklist-item" data-item-id="{{ item.id }}">
                                 <div class="field full">
                                     <div class="section-label">Status</div>
                                     <div class="status-grid">
@@ -635,7 +804,7 @@
                                     <label>Live Camera Photo (required)</label>
                                     <div class="camera-wrap">
                                         <div class="camera-frame">
-                                            <video id="video_{{ item.id }}" autoplay playsinline></video>
+                                            <video id="video_{{ item.id }}" autoplay playsinline style="display:none;"></video>
                                             <img id="preview_{{ item.id }}" alt="Captured preview" style="display:none;" />
                                             <div id="placeholder_{{ item.id }}" class="camera-placeholder">Open the camera to capture a live inspection photo.</div>
                                         </div>
@@ -658,7 +827,7 @@
 
         <div class="sticky-submit">
             <div class="submit-inner">
-                <div class="submit-note">Review the checklist and submit once all required live photos have been captured.</div>
+                <div class="submit-note">Your progress is saved locally on this device. Submit once all required live photos have been captured.</div>
                 <button class="btn btn-primary submit-btn" type="submit">Submit Checklist</button>
             </div>
         </div>
@@ -668,10 +837,224 @@
 <script>
     const cameraStreams = {};
     let latestLocationText = "";
+    let dbInstance = null;
+
+    const DB_NAME = "dunhill_checklist_db";
+    const DB_VERSION = 1;
+    const STORE_NAME = "checklist_drafts";
+
+    function getUsername() {
+        return "{{ request.user.username|escapejs }}";
+    }
+
+    function getSiteId() {
+        return "{{ site.id }}";
+    }
+
+    function getChecklistType() {
+        return "{{ ctype|escapejs }}";
+    }
+
+    function getInspectionDate() {
+        const el = document.getElementById("inspection_date");
+        return el ? el.value : "";
+    }
+
+    function getDraftKey() {
+        return `${getUsername()}_${getSiteId()}_${getChecklistType()}_${getInspectionDate() || "no-date"}`;
+    }
+
+    function setDraftStatus(message, color = "#15803d") {
+        const el = document.getElementById("draft_status");
+        if (el) {
+            el.textContent = message;
+            el.style.color = color;
+        }
+    }
 
     function setLocationStatus(message) {
         const el = document.getElementById("location_status");
         if (el) el.textContent = message;
+    }
+
+    function openDraftDB() {
+        return new Promise((resolve, reject) => {
+            if (dbInstance) {
+                resolve(dbInstance);
+                return;
+            }
+
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+            request.onupgradeneeded = function(event) {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    db.createObjectStore(STORE_NAME, { keyPath: "draft_key" });
+                }
+            };
+
+            request.onsuccess = function(event) {
+                dbInstance = event.target.result;
+                resolve(dbInstance);
+            };
+
+            request.onerror = function(event) {
+                reject(event.target.error);
+            };
+        });
+    }
+
+    async function saveDraftObject(draft) {
+        const db = await openDraftDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, "readwrite");
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.put(draft);
+
+            req.onsuccess = () => resolve(true);
+            req.onerror = (e) => reject(e.target.error);
+        });
+    }
+
+    async function getDraftObject(key) {
+        const db = await openDraftDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, "readonly");
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.get(key);
+
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = (e) => reject(e.target.error);
+        });
+    }
+
+    async function deleteDraftObject(key) {
+        const db = await openDraftDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, "readwrite");
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.delete(key);
+
+            req.onsuccess = () => resolve(true);
+            req.onerror = (e) => reject(e.target.error);
+        });
+    }
+
+    function collectDraftData() {
+        const draft = {
+            draft_key: getDraftKey(),
+            username: getUsername(),
+            site_id: getSiteId(),
+            checklist_type: getChecklistType(),
+            inspection_date: getInspectionDate(),
+            submit_location_text: document.getElementById("submit_location_text")?.value || "",
+            last_saved_at: new Date().toISOString(),
+            items: {}
+        };
+
+        document.querySelectorAll(".checklist-item").forEach(block => {
+            const itemId = block.dataset.itemId;
+            const statusEl = document.querySelector(`input[name="status_${itemId}"]:checked`);
+            const valueEl = document.querySelector(`[name="value_${itemId}"]`);
+            const remarksEl = document.querySelector(`[name="remarks_${itemId}"]`);
+            const photoEl = document.getElementById(`photo_data_${itemId}`);
+
+            draft.items[itemId] = {
+                status: statusEl ? statusEl.value : "Done",
+                value: valueEl ? valueEl.value : "",
+                remarks: remarksEl ? remarksEl.value : "",
+                photo_data: photoEl ? photoEl.value : ""
+            };
+        });
+
+        return draft;
+    }
+
+    async function saveDraftNow() {
+        try {
+            const draft = collectDraftData();
+            await saveDraftObject(draft);
+            setDraftStatus(`Draft saved locally at ${new Date().toLocaleTimeString()}`);
+        } catch (err) {
+            console.error(err);
+            setDraftStatus("Failed to save local draft", "#b91c1c");
+        }
+    }
+
+    async function restoreDraft() {
+        try {
+            const draft = await getDraftObject(getDraftKey());
+            if (!draft) {
+                setDraftStatus("No local draft found for this checklist", "#b45309");
+                return;
+            }
+
+            if (draft.inspection_date) {
+                document.getElementById("inspection_date").value = draft.inspection_date;
+            }
+
+            if (draft.submit_location_text) {
+                document.getElementById("submit_location_text").value = draft.submit_location_text;
+                latestLocationText = draft.submit_location_text;
+                setLocationStatus(`Restored location: ${draft.submit_location_text}`);
+            }
+
+            Object.entries(draft.items || {}).forEach(([itemId, data]) => {
+                const statusEl = document.querySelector(`input[name="status_${itemId}"][value="${data.status || "Done"}"]`);
+                const valueEl = document.querySelector(`[name="value_${itemId}"]`);
+                const remarksEl = document.querySelector(`[name="remarks_${itemId}"]`);
+                const photoEl = document.getElementById(`photo_data_${itemId}`);
+                const previewEl = document.getElementById(`preview_${itemId}`);
+                const videoEl = document.getElementById(`video_${itemId}`);
+
+                if (statusEl) statusEl.checked = true;
+                if (valueEl) valueEl.value = data.value || "";
+                if (remarksEl) remarksEl.value = data.remarks || "";
+                if (photoEl) photoEl.value = data.photo_data || "";
+
+                if (previewEl && data.photo_data) {
+                    previewEl.src = data.photo_data;
+                    previewEl.style.display = "block";
+                    if (videoEl) videoEl.style.display = "none";
+                    togglePlaceholder(itemId, false);
+                    setCameraStatus(itemId, "Photo restored from local draft");
+                }
+            });
+
+            setDraftStatus("Draft restored from this device");
+        } catch (err) {
+            console.error(err);
+            setDraftStatus("Failed to restore draft", "#b91c1c");
+        }
+    }
+
+    async function clearDraft() {
+        try {
+            await deleteDraftObject(getDraftKey());
+            setDraftStatus("Local draft cleared", "#b45309");
+        } catch (err) {
+            console.error(err);
+            setDraftStatus("Failed to clear local draft", "#b91c1c");
+        }
+    }
+
+    function debounce(fn, wait = 700) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => fn.apply(this, args), wait);
+        };
+    }
+
+    const autoSaveDraft = debounce(() => {
+        saveDraftNow();
+    }, 800);
+
+    function bindAutoSave() {
+        document.querySelectorAll("input, select, textarea").forEach(el => {
+            el.addEventListener("change", autoSaveDraft);
+            el.addEventListener("input", autoSaveDraft);
+        });
     }
 
     function captureLocation() {
@@ -682,22 +1065,25 @@
             latestLocationText = "Geolocation not supported by this device/browser";
             hiddenInput.value = latestLocationText;
             setLocationStatus(latestLocationText);
+            saveDraftNow();
             return;
         }
 
         setLocationStatus("Capturing current location…");
         navigator.geolocation.getCurrentPosition(
-            function(position) {
+            async function(position) {
                 const { latitude, longitude, accuracy } = position.coords;
                 latestLocationText = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}, Accuracy: ${Math.round(accuracy)}m`;
                 hiddenInput.value = latestLocationText;
                 setLocationStatus(`Location captured: ${latestLocationText}`);
+                await saveDraftNow();
             },
-            function(error) {
+            async function(error) {
                 const message = error && error.message ? error.message : "Location unavailable";
                 latestLocationText = `Location unavailable: ${message}`;
                 hiddenInput.value = latestLocationText;
                 setLocationStatus(latestLocationText);
+                await saveDraftNow();
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
@@ -746,7 +1132,7 @@
         }
     }
 
-    function takePhoto(itemId) {
+    async function takePhoto(itemId) {
         const video = document.getElementById(`video_${itemId}`);
         const canvas = document.getElementById(`canvas_${itemId}`);
         const preview = document.getElementById(`preview_${itemId}`);
@@ -774,6 +1160,7 @@
         video.style.display = "none";
         togglePlaceholder(itemId, false);
         setCameraStatus(itemId, "Photo captured");
+        await saveDraftNow();
     }
 
     function stopCamera(itemId) {
@@ -786,7 +1173,7 @@
         const video = document.getElementById(`video_${itemId}`);
         if (video) {
             video.srcObject = null;
-            video.style.display = "block";
+            video.style.display = "none";
         }
 
         const hiddenInput = document.getElementById(`photo_data_${itemId}`);
@@ -804,22 +1191,201 @@
         }
     }
 
-    document.addEventListener("DOMContentLoaded", function() {
+    function stopAllCameras() {
+        Object.keys(cameraStreams).forEach(itemId => stopCamera(itemId));
+    }
+
+    function updateOnlineStatus() {
+        if (navigator.onLine) {
+            setDraftStatus("Online - local draft saving active");
+        } else {
+            setDraftStatus("Offline - saving locally on this device only", "#b45309");
+        }
+    }
+
+    function getAllSearchableItems() {
+        return Array.from(document.querySelectorAll(".item-card[data-search-text]"));
+    }
+
+    function clearSearchHighlights() {
+        document.querySelectorAll(".search-highlight").forEach(el => {
+            el.classList.remove("search-highlight");
+        });
+    }
+
+    function hideSearchResults() {
+        const box = document.getElementById("search-results");
+        if (box) {
+            box.style.display = "none";
+            box.innerHTML = "";
+        }
+    }
+
+    function showSearchResults(matches, query) {
+        const box = document.getElementById("search-results");
+        if (!box) return;
+
+        if (!query.trim()) {
+            hideSearchResults();
+            return;
+        }
+
+        if (!matches.length) {
+            box.innerHTML = `<div class="search-empty">No matching items found.</div>`;
+            box.style.display = "block";
+            return;
+        }
+
+        box.innerHTML = matches.slice(0, 10).map((item, index) => {
+            const itemId = item.dataset.itemId || "";
+            const module = item.dataset.module || "";
+            const titleEl = item.querySelector(".item-title");
+            const title = titleEl ? titleEl.textContent.trim() : itemId;
+
+            return `
+                <div class="search-result-item" data-target-id="${itemId}" data-index="${index}">
+                    <div class="search-result-title">${itemId} — ${title}</div>
+                    <div class="search-result-meta">${module}</div>
+                </div>
+            `;
+        }).join("");
+
+        box.style.display = "block";
+
+        box.querySelectorAll(".search-result-item").forEach(el => {
+            el.addEventListener("click", function() {
+                const targetId = this.dataset.targetId;
+                jumpToItem(targetId);
+                hideSearchResults();
+            });
+        });
+    }
+
+    function filterChecklistItems(query) {
+        const q = query.trim().toLowerCase();
+        const allItems = getAllSearchableItems();
+
+        if (!q) {
+            allItems.forEach(item => item.classList.remove("search-hidden"));
+            document.querySelectorAll(".module-card").forEach(moduleCard => {
+                moduleCard.classList.remove("search-hidden");
+            });
+            return allItems;
+        }
+
+        const matches = [];
+
+        allItems.forEach(item => {
+            const haystack = item.dataset.searchText || "";
+            const matched = haystack.includes(q);
+
+            if (matched) {
+                item.classList.remove("search-hidden");
+                matches.push(item);
+            } else {
+                item.classList.add("search-hidden");
+            }
+        });
+
+        document.querySelectorAll(".module-card").forEach(moduleCard => {
+            const visibleItems = moduleCard.querySelectorAll(".item-card:not(.search-hidden)");
+            if (visibleItems.length === 0) {
+                moduleCard.classList.add("search-hidden");
+            } else {
+                moduleCard.classList.remove("search-hidden");
+                if (q) {
+                    moduleCard.open = true;
+                }
+            }
+        });
+
+        return matches;
+    }
+
+    function jumpToItem(itemId) {
+        clearSearchHighlights();
+
+        const target = document.getElementById(`item_card_${itemId}`);
+        if (!target) return;
+
+        const moduleCard = target.closest(".module-card");
+        if (moduleCard) {
+            moduleCard.open = true;
+            moduleCard.classList.remove("search-hidden");
+        }
+
+        target.classList.remove("search-hidden");
+        target.classList.add("search-highlight");
+
+        target.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+
+        setTimeout(() => {
+            target.classList.remove("search-highlight");
+        }, 2500);
+    }
+
+    function initChecklistSearch() {
+        const input = document.getElementById("item-search");
+        const resultsBox = document.getElementById("search-results");
+        if (!input || !resultsBox) return;
+
+        input.addEventListener("input", function() {
+            const query = this.value || "";
+            const matches = filterChecklistItems(query);
+            showSearchResults(matches, query);
+        });
+
+        input.addEventListener("focus", function() {
+            const query = this.value || "";
+            if (query.trim()) {
+                const matches = filterChecklistItems(query);
+                showSearchResults(matches, query);
+            }
+        });
+
+        document.addEventListener("click", function(event) {
+            const insideSearch = event.target.closest(".search-shell");
+            if (!insideSearch) {
+                hideSearchResults();
+            }
+        });
+
+        input.addEventListener("keydown", function(event) {
+            if (event.key === "Escape") {
+                hideSearchResults();
+                input.blur();
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", async function() {
+        bindAutoSave();
+        updateOnlineStatus();
+        await restoreDraft();
         captureLocation();
+        initChecklistSearch();
 
         const form = document.getElementById("checklist-form");
         if (form) {
-            form.addEventListener("submit", function() {
+            form.addEventListener("submit", async function() {
                 const hiddenInput = document.getElementById("submit_location_text");
                 if (hiddenInput && !hiddenInput.value && latestLocationText) {
                     hiddenInput.value = latestLocationText;
                 }
+                await saveDraftNow();
+                sessionStorage.setItem("clear_draft_after_submit", getDraftKey());
             });
         }
     });
 
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+
     window.addEventListener("beforeunload", function() {
-        Object.keys(cameraStreams).forEach(itemId => stopCamera(itemId));
+        stopAllCameras();
     });
 </script>
 {% endblock %}

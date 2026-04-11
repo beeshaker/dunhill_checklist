@@ -1,14 +1,36 @@
-{% extends "inspections/base.html" %}
-{% block content %}
-<div class="top">
-    <h2>Checklist Submitted</h2>
-</div>
+<script>
+(async function() {
+    const key = sessionStorage.getItem("clear_draft_after_submit");
+    if (!key) return;
 
-<div class="card">
-    <p>Submission ID: {{ submission.id }}</p>
-    <p>Checklist: {{ submission.checklist_type }}</p>
-    <p>Site: {{ submission.site.name }}</p>
-    <p>Escalations: {{ esc_count }}</p>
-    <a class="btn" href="{% url 'dashboard' %}">Back to Dashboard</a>
-</div>
-{% endblock %}
+    function openDraftDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open("dunhill_checklist_db", 1);
+
+            request.onupgradeneeded = function(event) {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains("checklist_drafts")) {
+                    db.createObjectStore("checklist_drafts", { keyPath: "draft_key" });
+                }
+            };
+
+            request.onsuccess = function(event) {
+                resolve(event.target.result);
+            };
+
+            request.onerror = function(event) {
+                reject(event.target.error);
+            };
+        });
+    }
+
+    try {
+        const db = await openDraftDB();
+        const tx = db.transaction("checklist_drafts", "readwrite");
+        tx.objectStore("checklist_drafts").delete(key);
+        sessionStorage.removeItem("clear_draft_after_submit");
+    } catch (err) {
+        console.error("Failed to clear local draft:", err);
+    }
+})();
+</script>

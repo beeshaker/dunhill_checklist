@@ -1,0 +1,339 @@
+{% extends "inspections/base.html" %}
+{% block content %}
+<style>
+    .builder-shell {
+        max-width: 1250px;
+        margin: 0 auto;
+        padding: 20px 14px 40px;
+    }
+
+    .builder-top {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 75%, #2563eb 100%);
+        color: #fff;
+        border-radius: 22px;
+        padding: 22px 20px;
+        margin-bottom: 20px;
+    }
+
+    .builder-top h2 {
+        margin: 0 0 6px;
+    }
+
+    .builder-top p {
+        margin: 0;
+        color: rgba(255,255,255,0.85);
+    }
+
+    .builder-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
+        gap: 20px;
+    }
+
+    .builder-card {
+        background: #fff;
+        border: 1px solid #dbe4f0;
+        border-radius: 18px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        padding: 18px;
+    }
+
+    .builder-card h3 {
+        margin-top: 0;
+        margin-bottom: 14px;
+        color: #132238;
+    }
+
+    .builder-field {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .builder-field label {
+        font-weight: 700;
+        color: #132238;
+        font-size: 0.92rem;
+    }
+
+    .builder-field input,
+    .builder-field select,
+    .builder-field textarea {
+        width: 100%;
+        border: 1px solid #bfd0e4;
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 0.96rem;
+        box-sizing: border-box;
+    }
+
+    .builder-inline {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .builder-checks {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+    }
+
+    .builder-checks label {
+        font-weight: 600;
+        color: #334155;
+    }
+
+    .new-module-wrap {
+        display: none;
+    }
+
+    .module-helper {
+        margin-top: 6px;
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+
+    .error-box {
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+        color: #be123c;
+        padding: 12px 14px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    .table-clean {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.94rem;
+    }
+
+    .table-clean th,
+    .table-clean td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #e5edf6;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .table-clean th {
+        color: #334155;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .tag {
+        display: inline-block;
+        background: #e0ecff;
+        color: #1d4ed8;
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        color: #fff;
+    }
+
+    .btn-secondary {
+        background: #eef2ff;
+        color: #1e3a8a;
+    }
+
+    .btn-danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    @media (max-width: 980px) {
+        .builder-grid,
+        .builder-inline {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="builder-shell">
+    <div class="builder-top">
+        <h2>Checklist Builder</h2>
+        <p>Create checklist items for all sites, a site category, or an individual site. Modules can be selected from the existing list or created instantly.</p>
+    </div>
+
+    <div class="builder-grid">
+        <div class="builder-card">
+            <h3>Create Checklist Item</h3>
+
+            {% if form.errors %}
+                <div class="error-box">
+                    {{ form.errors }}
+                </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="builder-inline">
+                    <div class="builder-field">
+                        <label for="{{ form.item_id.id_for_label }}">Item ID</label>
+                        {{ form.item_id }}
+                    </div>
+                    <div class="builder-field">
+                        <label for="{{ form.checklist_type.id_for_label }}">Checklist Type</label>
+                        {{ form.checklist_type }}
+                    </div>
+                </div>
+
+                <div class="builder-field">
+                    <label for="{{ form.module_choice.id_for_label }}">Module</label>
+                    {{ form.module_choice }}
+                    <div class="module-helper">Choose an existing module, or select “+ Create New Module”.</div>
+                </div>
+
+                <div class="builder-field new-module-wrap" id="new-module-wrap">
+                    <label for="{{ form.new_module.id_for_label }}">New Module Name</label>
+                    {{ form.new_module }}
+                </div>
+
+                <div class="builder-field">
+                    <label for="{{ form.control_item.id_for_label }}">Control Item</label>
+                    {{ form.control_item }}
+                </div>
+
+                <div class="builder-inline">
+                    <div class="builder-field">
+                        <label for="{{ form.applies_to.id_for_label }}">Applies To</label>
+                        {{ form.applies_to }}
+                    </div>
+                    <div class="builder-field">
+                        <label for="{{ form.site_category.id_for_label }}">Site Category</label>
+                        {{ form.site_category }}
+                    </div>
+                </div>
+
+                <div class="builder-inline">
+                    <div class="builder-field">
+                        <label for="{{ form.site.id_for_label }}">Individual Site</label>
+                        {{ form.site }}
+                    </div>
+                    <div class="builder-field">
+                        <label for="{{ form.escalation.id_for_label }}">Escalation</label>
+                        {{ form.escalation }}
+                    </div>
+                </div>
+
+                <div class="builder-inline">
+                    <div class="builder-field">
+                        <label for="{{ form.display_order.id_for_label }}">Display Order</label>
+                        {{ form.display_order }}
+                    </div>
+                </div>
+
+                <div class="builder-checks">
+                    <label>{{ form.requires_photo }} Requires Photo</label>
+                    <label>{{ form.is_active }} Active</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save Checklist Item</button>
+            </form>
+        </div>
+
+        <div class="builder-card">
+            <h3>Existing Custom Items</h3>
+            <div class="table-wrap">
+                <table class="table-clean">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Type</th>
+                            <th>Module</th>
+                            <th>Scope</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td><span class="tag">{{ item.item_id }}</span></td>
+                            <td>{{ item.checklist_type|title }}</td>
+                            <td>{{ item.module }}</td>
+                            <td>
+                                {% if item.applies_to == "all" %}
+                                    All Sites
+                                {% elif item.applies_to == "site_category" %}
+                                    Category: {{ item.site_category }}
+                                {% elif item.applies_to == "individual_site" %}
+                                    Site: {{ item.site.name }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.is_active %}
+                                    Active
+                                {% else %}
+                                    Inactive
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a class="btn {% if item.is_active %}btn-danger{% else %}btn-secondary{% endif %}"
+                                   href="{% url 'toggle_checklist_item_status' item.id %}">
+                                    {% if item.is_active %}Deactivate{% else %}Activate{% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6">No custom checklist items yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleNewModuleField() {
+        const moduleSelect = document.getElementById("id_module_choice");
+        const newModuleWrap = document.getElementById("new-module-wrap");
+        const newModuleInput = document.getElementById("id_new_module");
+
+        if (!moduleSelect || !newModuleWrap) return;
+
+        if (moduleSelect.value === "__new__") {
+            newModuleWrap.style.display = "grid";
+            if (newModuleInput) newModuleInput.focus();
+        } else {
+            newModuleWrap.style.display = "none";
+            if (newModuleInput) newModuleInput.value = "";
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const moduleSelect = document.getElementById("id_module_choice");
+        if (moduleSelect) {
+            moduleSelect.addEventListener("change", toggleNewModuleField);
+            toggleNewModuleField();
+        }
+    });
+</script>
+{% endblock %}

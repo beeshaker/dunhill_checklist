@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.contrib.auth.models import User
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Q
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.template.loader import render_to_string
@@ -19,6 +19,7 @@ from .forms import (
     SiteForm,
     UserCreateForm,
     AssignSiteForm,
+    ChecklistItemForm,
     DailyQuestionAnswerForm,
     DailyQuestionOverrideForm,
     QuestionResultFilterForm,
@@ -28,12 +29,13 @@ from .models import (
     UserSite,
     ChecklistSubmission,
     ChecklistResponse,
+    ChecklistItem,
     UserProfile,
     DailyQuestion,
     DailyQuestionAssignment,
     QuestionOverride,
 )
-from .checklist_items import DAILY_ITEMS, WEEKLY_ITEMS, MONTHLY_ITEMS
+from .checklist_items import get_items as get_system_items
 
 
 QUESTION_ROLE_MAP = {
@@ -43,18 +45,82 @@ QUESTION_ROLE_MAP = {
 }
 
 
-def get_items(ctype, portfolio):
-    source = {
-        "daily": DAILY_ITEMS,
-        "weekly": WEEKLY_ITEMS,
-        "monthly": MONTHLY_ITEMS,
+def normalize_system_item(item):
+    return {
+        "id": item["id"],
+        "module": item["module"],
+        "control_item": item["control_item"],
+        "escalation": item.get("escalation", "") or "",
+        "requires_photo": item.get("requires_photo", True),
+        "source": item.get("source", "system"),
+        "is_ccp": item.get("is_ccp", False),
+        "input_type": item.get("input_type", "text"),
+        "threshold": item.get("threshold"),
+        "dropdown_key": item.get("dropdown_key"),
+        "evidence": item.get("evidence"),
     }
-    items = source.get(ctype, [])
+
+
+def get_static_items(ctype, portfolio):
+    """
+    Pull built-in checklist items from checklist_items.py.
+    This now supports:
+    - master items
+    - portfolio inheritance
+    - CCP items for daily checklists
+    """
     return [
-        i for i in items
-        if i["portfolio"].lower() == portfolio.lower()
-        or (portfolio in ("S&F", "Serviced & Furnished") and i["portfolio"] == "S&F")
+        normalize_system_item(item)
+        for item in get_system_items(ctype, portfolio)
     ]
+
+
+def get_custom_items(ctype, site):
+    qs = ChecklistItem.objects.filter(
+        checklist_type=ctype,
+        is_active=True,
+    ).filter(
+        Q(applies_to="all")
+        | Q(applies_to="site_category", site_category=site.portfolio_type)
+        | Q(applies_to="individual_site", site=site)
+    ).order_by("module", "display_order", "item_id")
+
+    return [
+        {
+            "id": item.item_id,
+            "module": item.module,
+            "control_item": item.control_item,
+            "escalation": item.escalation,
+            "requires_photo": item.requires_photo,
+            "source": "custom",
+            "is_ccp": False,
+            "input_type": "text",
+            "threshold": None,
+            "dropdown_key": None,
+            "evidence": None,
+        }
+        for item in qs
+    ]
+
+
+def get_items(ctype, portfolio, site=None):
+    """
+    Final checklist source:
+    built-in system items + admin-created DB items
+    """
+    items = get_static_items(ctype, portfolio)
+
+    if site is not None:
+        items.extend(get_custom_items(ctype, site))
+
+    # Keep CCP section at bottom of daily checklist
+    normal_items = [x for x in items if not x.get("is_ccp")]
+    ccp_items = [x for x in items if x.get("is_ccp")]
+
+    normal_items.sort(key=lambda x: (x["module"].lower(), x["id"]))
+    ccp_items.sort(key=lambda x: x["id"])
+
+    return normal_items + ccp_items
 
 
 def group_by_module(items):
@@ -555,7 +621,7 @@ def checklist_form(request, ctype, site_id):
         messages.error(request, "You do not have access to this site.")
         return redirect("select_site", ctype=ctype)
 
-    items = get_items(ctype, site.portfolio_type)
+    items = get_items(ctype, site.portfolio_type, site)
     grouped_items = group_by_module(items)
     today = datetime.date.today()
 
@@ -581,7 +647,7 @@ def checklist_form(request, ctype, site_id):
             remarks = request.POST.get(f"remarks_{iid}", "")
             image_data = request.POST.get(f"photo_data_{iid}", "")
 
-            if not image_data:
+            if item.get("requires_photo", True) and not image_data:
                 messages.error(request, f"{iid}: live camera photo is required.")
                 has_error = True
 
@@ -608,10 +674,8 @@ def checklist_form(request, ctype, site_id):
             escalation = item.get("escalation", "") if status == "Issue" else ""
 
             image_file = decode_base64_image(image_data, iid)
-            if image_file is None:
-                continue
 
-            response = ChecklistResponse.objects.create(
+            ChecklistResponse.objects.create(
                 submission=submission,
                 item_id=iid,
                 control_item=item["control_item"],
@@ -620,9 +684,9 @@ def checklist_form(request, ctype, site_id):
                 manual_value=manual_val,
                 remarks=remarks,
                 escalation_level=escalation,
-                evidence_image_blob=image_file["bytes"],
-                evidence_image_mime_type=image_file["mime_type"],
-                evidence_image_filename=image_file["filename"],
+                evidence_image_blob=image_file["bytes"] if image_file else None,
+                evidence_image_mime_type=image_file["mime_type"] if image_file else "",
+                evidence_image_filename=image_file["filename"] if image_file else "",
             )
 
         return redirect("success_page", submission_id=submission.id)
@@ -686,7 +750,7 @@ def checklist_submission_report(request, submission_id):
     done_count = responses.filter(item_status="Done").count()
     issue_count = responses.filter(item_status="Issue").count()
     na_count = responses.filter(item_status="N/A").count()
-    photo_count = sum(1 for response in responses if response.has_evidence_image)
+    photo_count = sum(1 for response in responses if getattr(response, "has_evidence_image", False))
     logo_url = request.build_absolute_uri(static("inspections/img/dunhill_logo.png"))
 
     return render(request, "inspections/checklist_submission_report.html", {
@@ -717,7 +781,7 @@ def checklist_submission_report_pdf(request, submission_id):
     done_count = responses.filter(item_status="Done").count()
     issue_count = responses.filter(item_status="Issue").count()
     na_count = responses.filter(item_status="N/A").count()
-    photo_count = sum(1 for response in responses if response.has_evidence_image)
+    photo_count = sum(1 for response in responses if getattr(response, "has_evidence_image", False))
     logo_url = request.build_absolute_uri(static("inspections/img/dunhill_logo.png"))
 
     html_string = render_to_string(
@@ -759,6 +823,7 @@ def admin_panel(request):
     )
     pending_overrides = QuestionOverride.objects.filter(is_active=True, answered_at__isnull=True).count()
     today_results = DailyQuestionAssignment.objects.filter(assignment_date=today).count()
+    total_custom_checklist_items = ChecklistItem.objects.count()
 
     return render(request, "inspections/admin_panel.html", {
         "is_admin_user": True,
@@ -766,6 +831,7 @@ def admin_panel(request):
         "total_answers": total_answers,
         "pending_overrides": pending_overrides,
         "today_results": today_results,
+        "total_custom_checklist_items": total_custom_checklist_items,
     })
 
 
@@ -839,6 +905,49 @@ def assign_site(request):
         "assignments": assignments,
         "is_admin_user": True,
     })
+
+
+@login_required
+def checklist_item_builder(request):
+    if not is_admin_user(request.user):
+        messages.error(request, "Access denied.")
+        return redirect("dashboard")
+
+    form = ChecklistItemForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        item = form.save(commit=False)
+        item.created_by = request.user
+        item.save()
+        messages.success(request, f"Checklist item '{item.item_id}' created successfully.")
+        return redirect("checklist_item_builder")
+
+    items = ChecklistItem.objects.select_related("site", "created_by").all().order_by(
+        "checklist_type", "module", "display_order", "item_id"
+    )
+
+    return render(request, "inspections/checklist_item_builder.html", {
+        "form": form,
+        "items": items,
+        "is_admin_user": True,
+    })
+
+@login_required
+def toggle_checklist_item_status(request, item_id):
+    if not is_admin_user(request.user):
+        messages.error(request, "Access denied.")
+        return redirect("dashboard")
+
+    item = get_object_or_404(ChecklistItem, id=item_id)
+    item.is_active = not item.is_active
+    item.save(update_fields=["is_active"])
+
+    if item.is_active:
+        messages.success(request, f"{item.item_id} is now active.")
+    else:
+        messages.success(request, f"{item.item_id} is now inactive.")
+
+    return redirect("checklist_item_builder")
 
 
 @login_required

@@ -2,19 +2,21 @@
 {% block content %}
 <div class="top">
     <h2>Admin Panel</h2>
-    <p>Manage users, sites, assignments, questions, scores, and admin overrides for daily testing.</p>
+    <p>Manage users, sites, checklist items, assignments, questions, scores, and admin overrides.</p>
 </div>
 
-<div class="grid grid-3">
+<div class="grid grid-4">
     <div class="card"><strong>{{ total_questions }}</strong><br>Total questions</div>
     <div class="card"><strong>{{ total_answers }}</strong><br>Total recorded answers</div>
     <div class="card"><strong>{{ pending_overrides }}</strong><br>Pending overrides</div>
+    <div class="card"><strong>{{ total_custom_checklist_items }}</strong><br>Custom checklist items</div>
 </div>
 
-<div class="grid grid-3">
+<div class="grid grid-4">
     <a class="card" href="{% url 'create_user' %}">Create Users</a>
     <a class="card" href="{% url 'create_site' %}">Create Sites</a>
     <a class="card" href="{% url 'assign_site' %}">Assign Sites</a>
+    <a class="card" href="{% url 'checklist_item_builder' %}">Checklist Builder</a>
 </div>
 
 <div class="card">
